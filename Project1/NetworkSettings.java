@@ -1,77 +1,85 @@
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Scanner;
+import java.util.List;
+import java.util.Random;
 
 public class NetworkSettings 
 {
-    int NetworkID = -1;
-	int IsMsgSend = 0;
-    int sentDone = 0;
+    static int NodeID = 0;
+    static List <NetworkInfo> allNetworks;
+    static VectorClock LocalVectorClock;
+    static LinkedList<Message> Msgbuffer = new LinkedList<Message>();
+    static int TotalNode;
+    Socket []allsocket;
+    PrintWriter []allsocketWriter;
 
-    LinkedList<Message> Msgbuffer = new LinkedList<Message>();
-    protected Socket[] sockets = new Socket[4];
-    protected boolean[] IsSocketExist = new boolean[10];
-
-    int[] Rx = new int[4]; // causal dependency info
-	int[][] Tx = new int[4][4];// causal dependency info
-    int CountOfTotalMsg = 0;
-    
-    public NetworkSettings(int NetworkID) {
-		this.NetworkID = NetworkID;
-        IsMsgSend = 0;
-		
-		if (NetworkID == 0)
-			for (int node = 1; node < 4; node++)
-            Msgbuffer.add(new Message(0, node));
-	}
-
-    protected synchronized void InsertSocket(int NodeID, Socket socket) {
-		sockets[NodeID] = socket;
-	}
-
-    protected synchronized boolean CheckSocketsExistance() 
+    public NetworkSettings(int NodeID)
     {
+        this.NodeID = NodeID;
+        TotalNode = 2;
+        allNetworks = new ArrayList <NetworkInfo>();
+        LocalVectorClock = new VectorClock(TotalNode);
         
-		for (int SocNode = 0; SocNode < 10; SocNode++) {
-			if (SocNode != NetworkID && (IsSocketExist[SocNode] == false)) 
-            {
-                System.out.println("CheckSocketsExistance false");
-				return false;
-			}
-		}
-        System.out.println("CheckSocketsExistance true");
-		return true;
-	}
+        allNetworks.add(new NetworkInfo("127.0.0.1",6066));
+        allNetworks.add(new NetworkInfo("127.0.0.1",6067));
+        allNetworks.add(new NetworkInfo("127.0.0.1",6068));
+        allNetworks.add(new NetworkInfo("127.0.0.1",6069));
+        allsocket = new Socket[TotalNode];
+        allsocketWriter = new PrintWriter[TotalNode];
+        
+    }
 
-    public void StartNetwork(int NetworkID) throws InterruptedException {
-		InitServer Server = new InitServer(NetworkID);
-        Thread SeverThread = new Thread();
+    public void StartNetwork() throws InterruptedException 
+    {
+        int countSentMsg = 0;
+        Random Rdelay = new Random();
+        try
+        { 
+            Thread ServerThread = new ServerThread(allNetworks.get(NodeID).Port);
+            ServerThread.start();
 
+            Thread.sleep(10000);
+              for (int SocketIDX = 0; SocketIDX < NetworkSettings.TotalNode; SocketIDX++)  
+                {
+                    if(NetworkSettings.NodeID != SocketIDX)
+                    {
+                        allsocket[SocketIDX] = new Socket(NetworkSettings.allNetworks.get(SocketIDX).HostName, NetworkSettings.allNetworks.get(SocketIDX).Port);
+                        allsocketWriter[SocketIDX] = new PrintWriter(allsocket[SocketIDX].getOutputStream(),true);
+                        System.out.println("Socket Connected !");
+                        System.out.println("Just connected to " + allsocket[SocketIDX].getRemoteSocketAddress());
+                    }
+                }
+            while (countSentMsg != 10) {
+                synchronized(NetworkSettings.LocalVectorClock)
+                {
+                    NetworkSettings.LocalVectorClock.tick(NodeID);
+                }
+                Message Msg = new Message(countSentMsg+1,NetworkSettings.LocalVectorClock);
+                String StringMsg = Msg.ObjtoString();
+                
+                for (int SocketIDX = 0; SocketIDX < NetworkSettings.TotalNode; SocketIDX++)  
+                {
+                    if(NetworkSettings.NodeID != SocketIDX)
+                    {
+                       allsocketWriter[SocketIDX].println(StringMsg);
+                       System.out.println(StringMsg);
+                        
+                    }
+                    Thread.sleep(Rdelay.nextInt(10)+1);
+                    
+                }
+                countSentMsg++;
+            }
+        } catch (IOException e) {
+            
+            e.printStackTrace();
+	    }   
+    }
     
-        System.out.println("Server Started");
-        Scanner sc = new Scanner(System.in);
-
-        InitClients Clients = new InitClients(NetworkID);
-        Thread ClientsThread = new Thread(Clients);
-
-		SeverThread.start();
-	    while (sc.nextInt() != 1) {
-		}
-
-        ClientsThread.start();
-		while (!SeverThread.isInterrupted()) {
-		}
-		System.out.println("Network#" + NetworkID + ": End initialization.\n");
-
-		NetworkTransmitter Sender = new NetworkTransmitter(NetworkID);
-        Thread SenderThread = new Thread(Sender);
-        SenderThread.start();
-
-        NetworkReceiver Receiver = new NetworkReceiver(NetworkID);
-        Thread ReceiverThread = new Thread(Receiver);
-        ReceiverThread.start();
-
-	}
-
+   
+    
 }
