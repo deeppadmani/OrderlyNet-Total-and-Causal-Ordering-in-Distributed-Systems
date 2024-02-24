@@ -54,17 +54,18 @@ public class VectorClock {
     public synchronized boolean IsMsgbuffered(Message others)
     {
         boolean Result = false;
-        for(int Idx = 0;Idx < NetworkSettings.TotalNode;Idx++)
-        {
-            if(Idx != others.NodeId)
+        if(NetworkSettings.LocalVectorClock.clock[NetworkSettings.NodeID] - others.vc.clock[NetworkSettings.NodeID] == 1){
+            for(int Idx = 0;Idx < NetworkSettings.TotalNode;Idx++)
             {
-                if(others.vc.clock[Idx] > NetworkSettings.LocalVectorClock.clock[Idx])
+                if(Idx != others.NodeId)
                 {
-                    Result = true;
+                    if(others.vc.clock[Idx] > NetworkSettings.LocalVectorClock.clock[Idx])
+                    {
+                        Result = true;
+                    }
                 }
             }
         }
-
         return Result;
     }
 }
