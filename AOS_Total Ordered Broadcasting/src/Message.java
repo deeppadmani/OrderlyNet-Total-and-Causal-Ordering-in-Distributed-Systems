@@ -4,7 +4,7 @@ import java.io.*;
 // Class representing a message that can be sent over the network
 public class Message implements Serializable {
 	int NodeId;         // ID of the node that created the message
-    int MsgCount ;      // Message count or identifier
+    int MsgSeq;      // Message count or identifier
     VectorClock vc;     // Vector clock associated with the message
 	
     // Default constructor (required for serialization)
@@ -18,7 +18,7 @@ public class Message implements Serializable {
 
         // Parse the node ID and message count from the split parts
         this.NodeId = Integer.parseInt(SplitMsg[0]);
-        this.MsgCount =  Integer.parseInt(SplitMsg[1]);
+        this.MsgSeq =  Integer.parseInt(SplitMsg[1]);
 
         // Create a vector clock from the third part of the split message
         this.vc = new VectorClock(NetworkSettings.TotalNode,SplitMsg[2]);
@@ -30,7 +30,7 @@ public class Message implements Serializable {
     {
         // Set the node ID to the current node's ID
         this.NodeId = NetworkSettings.NodeID;
-        this.MsgCount = MsgCount;   // Set the message count
+        this.MsgSeq = MsgCount;   // Set the message count
         this.vc = vc;       // Set the vector clock
     }
 
@@ -38,7 +38,7 @@ public class Message implements Serializable {
     public String ObjtoString()
     {
         // Convert the message fields to a string with "|" as delimiter
-        String MsgStr =  "" + this.NodeId +"|"+ this.MsgCount +"|"+ this.vc.toString().replaceAll(" ", "")
+        String MsgStr =  "" + this.NodeId +"|"+ this.MsgSeq +"|"+ this.vc.toString().replaceAll(" ", "")
                                                                          .replaceAll("\\[", "")
                                                                          .replaceAll("]", "");
         return MsgStr;      // Return the string representation of the message
@@ -48,6 +48,6 @@ public class Message implements Serializable {
     public void MsgPrint()
     {
         // Print node ID, message count, and vector clock
-        System.out.println("NodeId["+this.NodeId+"]  MsgNo["+this.MsgCount+"]   VectorClock["+this.vc.toString()+"]");
+        System.out.println("NodeId["+this.NodeId+"]  MsgSeq["+this.MsgSeq+"]   VectorClock["+this.vc.toString()+"]");
     }
 }

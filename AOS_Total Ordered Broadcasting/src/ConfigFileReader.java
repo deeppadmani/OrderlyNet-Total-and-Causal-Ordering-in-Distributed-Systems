@@ -27,10 +27,13 @@ public class ConfigFileReader {
         }
 
         String TotalNode = properties.getProperty("TotalNodes");
-
+        String Sequencer = properties.getProperty("Sequencer");
         String AllIps = properties.getProperty("NetworkNodes");
+        String noOfMessages = properties.getProperty("MessageCapacity");
 
         NetworkSettings.TotalNode = Integer.parseInt(TotalNode);
+        NetworkSettings.SequencerSrc = Integer.parseInt(Sequencer);
+        NetworkSettings.MessageCapacity = Integer.parseInt(noOfMessages);
 
         String []Networks =  AllIps.split(",");
 

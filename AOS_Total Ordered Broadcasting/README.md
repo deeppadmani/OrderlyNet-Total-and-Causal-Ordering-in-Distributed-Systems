@@ -7,6 +7,7 @@ change the NetworkConfig.conf update TotalNodes & NetworkNodes as
 ```NetworkConfig.conf
 TotalNodes = no. of node which user gone a use
 NetworkNodes = ipaddr port,ipaddr port,ipaddr port,ipaddr port
+Sequencer = Sequencer NodeID 
 ```
 
 ## Compilation

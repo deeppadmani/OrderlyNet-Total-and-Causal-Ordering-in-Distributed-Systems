@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Random;
 
 // Class for receiving network messages as a thread
@@ -14,7 +15,7 @@ public class NetworkReceiver extends Thread {
 		}
         
 		// Method to run the network receiver thread
-		public void run() {
+		public synchronized void run() {
 			Random Rdelay = new Random();		// Random delay generator
 			while (true) {
 				try {		// Synchronize access to the buffered reader
@@ -26,34 +27,44 @@ public class NetworkReceiver extends Thread {
 						Message Msg = new Message(MsgStr);
 						sleep(Rdelay.nextInt(5)+1);		// Introduce random delay before processing next
 						
-						if(false == NetworkSettings.LocalVectorClock.IsMsgbuffered(Msg))
+						if(Msg.MsgSeq == 0 &&  (NetworkSettings.SequencerSrc == NetworkSettings.NodeID))
 						{
-							NetworkSettings.LocalVectorClock.update(Msg.vc);
-							System.out.println("Message "+ Msg.ObjtoString() + " is Passed [Local Clock] --> " + NetworkSettings.LocalVectorClock.toString());
-						}
-						else
-						{
-							System.out.println("Message "+ Msg.ObjtoString() + " is Bufferd --> " + NetworkSettings.LocalVectorClock.toString());
-							NetworkSettings.Msgbuffer.addLast(Msg);
-						}
-						// Check if there are messages in the buffer to process
-					 	if(NetworkSettings.Msgbuffer.isEmpty() == false)
-						{
-							for(Message m:NetworkSettings.Msgbuffer)
+							if(false == NetworkSettings.LocalVectorClock.IsMsgbuffered(Msg))
 							{
-								// Check if the message can be delivered based on vector clock comparison
-								if(false == NetworkSettings.LocalVectorClock.IsMsgbuffered(m))
+								System.out.println("addFirst in Seq: " +Msg.ObjtoString());
+								NetworkSettings.SeqMsgbuffer.addFirst(Msg);
+								NetworkSettings.LocalVectorClock.update(Msg.vc);
+							}
+							else
+							{
+								System.out.println("Message "+ Msg.ObjtoString() + " is Bufferd --> " + NetworkSettings.LocalVectorClock.toString());
+								NetworkSettings.Msgbuffer.addLast(Msg);
+							}
+							// Check if there are messages in the buffer to process
+							if(NetworkSettings.Msgbuffer.isEmpty() == false)
+							{
+								for(Iterator<Message> iterator = NetworkSettings.Msgbuffer.iterator(); iterator.hasNext();)
 								{
-									
-									System.out.println("Message "+ m.ObjtoString() + " is Passed & Removed from Message Buffer [Local Clock] --> " + NetworkSettings.LocalVectorClock.toString());
-									NetworkSettings.LocalVectorClock.update(m.vc);
-									NetworkSettings.Msgbuffer.remove(m);			 // Remove the processed message from the buffer
+									Message m = iterator.next();
+									// Check if the message can be delivered based on vector clock comparison
+									if(false == NetworkSettings.LocalVectorClock.IsMsgbuffered(m))
+									{
+										NetworkSettings.SeqMsgbuffer.addFirst(m);
+										System.out.println("addFirst in Seq: " +m.ObjtoString());
+										NetworkSettings.LocalVectorClock.update(m.vc);
+										iterator.remove();			 // Remove the processed message from the buffer
+									}
 								}
 							}
 						}
-						if(true == NetworkSettings.Msg100Done()){
-							Thread.interrupted();
+						else{
+							System.out.println("Msg Passed " + Msg.ObjtoString());
+							NetworkSettings.LocalVectorClock.update(Msg.vc);
+						
 						}
+					/* 	if(true == NetworkSettings.NwMsgTxDone()){
+							Thread.interrupted();
+						}*/
 						
 						}
 					
