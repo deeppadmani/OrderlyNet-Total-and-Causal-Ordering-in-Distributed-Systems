@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 // Class to represent a vector clock
 public class VectorClock {
-    private int[] clock;            // Array to hold the clock values for each process
+    public int[] clock;            // Array to hold the clock values for each process
 
     // Constructor to initialize the vector clock with a given size
     public VectorClock(int size) {
@@ -41,15 +41,6 @@ public class VectorClock {
         return Arrays.toString(this.clock);         // Return the string representation of the clock array
     }
 
-    // Method to calculate the total value of the clock
-    public int getClockValue(VectorClock others) {
-        int totalClkValue = 0;
-        for (int i = 0; i < others.clock.length; i++) {
-            totalClkValue += others.clock[i] ;
-        }
-        return totalClkValue;
-    }
-
     // Method to check if a message is buffered based on vector clock comparison
     public synchronized boolean IsMsgbuffered(Message others)
     {
@@ -68,4 +59,6 @@ public class VectorClock {
         }
         return Result;
     }
+
+    
 }

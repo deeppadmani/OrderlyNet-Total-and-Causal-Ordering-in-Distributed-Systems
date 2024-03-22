@@ -51,6 +51,9 @@ public class NetworkReceiver extends Thread {
 								}
 							}
 						}
+						if(true == NetworkSettings.Msg100Done()){
+							Thread.interrupted();
+						}
 						
 						}
 					

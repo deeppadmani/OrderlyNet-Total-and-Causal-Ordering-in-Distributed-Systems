@@ -29,7 +29,15 @@ public class NetworkSettings
         allsocketWriter = new PrintWriter[TotalNode];
     }
 
-    
+    public static boolean Msg100Done()
+    {
+        if(LocalVectorClock.clock[0] == 100 &&
+        LocalVectorClock.clock[1] == 100    &&
+        LocalVectorClock.clock[2] == 100    &&
+        LocalVectorClock.clock[3] == 100)
+            return true;
+        return false;
+    }
     // Method to start the network communication
     public synchronized void StartNetwork() throws InterruptedException 
     {
