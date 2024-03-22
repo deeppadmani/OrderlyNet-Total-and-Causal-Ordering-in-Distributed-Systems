@@ -40,25 +40,5 @@ public class VectorClock {
     public String toString() {
         return Arrays.toString(this.clock);         // Return the string representation of the clock array
     }
-
-    // Method to check if a message is buffered based on vector clock comparison
-    public synchronized boolean IsMsgbuffered(Message others)
-    {
-        boolean Result = false;
-        if(NetworkSettings.LocalVectorClock.clock[NetworkSettings.NodeID] - others.vc.clock[NetworkSettings.NodeID] == 1){
-            for(int Idx = 0;Idx < NetworkSettings.TotalNode;Idx++)
-            {
-                if(Idx != others.NodeId)
-                {
-                    if(others.vc.clock[Idx] > NetworkSettings.LocalVectorClock.clock[Idx])
-                    {
-                        Result = true;
-                    }
-                }
-            }
-        }
-        return Result;
-    }
-
     
 }

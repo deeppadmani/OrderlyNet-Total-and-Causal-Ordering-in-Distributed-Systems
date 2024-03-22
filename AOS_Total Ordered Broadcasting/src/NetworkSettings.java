@@ -13,11 +13,10 @@ public class NetworkSettings
     static List <NetworkInfo> allNetworks;
     static VectorClock LocalVectorClock;
     static LinkedList<Message> Msgbuffer = new LinkedList<Message>();
-    static LinkedList<Message> SeqMsgbuffer = new LinkedList<Message>();
+    static SequencerClass SeqMsgbuffer;
     static int TotalNode; //Total node of Network
     static int MessageCapacity; // Total No. of Messages
     static int SequencerSrc = -1;
-    static int MsgSeq = 0;
 
     Socket []allsocket;
     PrintWriter []allsocketWriter;
@@ -31,6 +30,7 @@ public class NetworkSettings
         LocalVectorClock = new VectorClock(TotalNode);
         allsocket = new Socket[TotalNode];
         allsocketWriter = new PrintWriter[TotalNode];
+        SeqMsgbuffer = new SequencerClass();
     }
 
     public static boolean NwMsgTxDone()
@@ -72,26 +72,26 @@ public class NetworkSettings
             // Send messages to other nodes
             while (true) {
                 
-                if(countSentMsg < NetworkSettings.MessageCapacity )
+                if(countSentMsg < NetworkSettings.MessageCapacity)
                 {
+                    countSentMsg++;
+
                     // Increment local vector clock
                     NetworkSettings.LocalVectorClock.tick(NodeID);
-                    Message Msg = new Message(0,NetworkSettings.LocalVectorClock);
-                    System.out.println("Add In SeqBuf: "+ Msg.ObjtoString());
+                    Message Msg = new Message(0,countSentMsg);
                     NetworkSettings.SeqMsgbuffer.addFirst(Msg);
-                    countSentMsg++;
+                    Thread.sleep(Rdelay.nextInt(10)+1);
+                    
                 }
-                Thread.sleep(10);
+                
                 if( NetworkSettings.SeqMsgbuffer.isEmpty() == false)
                 {
                     Message Msg = NetworkSettings.SeqMsgbuffer.getLast();
-            //    System.out.println(" TEST: "+ NetworkSettings.MsgSeq);
                     if(NetworkSettings.NodeID == NetworkSettings.SequencerSrc)
                     {
-                            NetworkSettings.MsgSeq++;
-                            Msg.MsgSeq = NetworkSettings.MsgSeq;
+                            SeqMsgbuffer.SeqIncrement();
+                            Msg.MsgSeq = SeqMsgbuffer.getSeq();
                             String StringMsg = Msg.ObjtoString();
-                            System.out.println("Add Seq for Tx: "+ StringMsg);
                             Thread.sleep(Rdelay.nextInt(10)+1);
 
                             // Send the message to all other nodes
@@ -100,21 +100,24 @@ public class NetworkSettings
                                 if(NetworkSettings.NodeID != SocketIDX)
                                 {
                                     allsocketWriter[SocketIDX].println(StringMsg);
-                                    System.out.println("Tx: "+ StringMsg);
                                     
                                 }
                                 // Introduce random delay before sending the next message
                                 Thread.sleep(Rdelay.nextInt(10)+1);
                             }
+                            System.out.println("Add Broadcast with self update : "+ StringMsg + " with-Local Clock-> " + NetworkSettings.LocalVectorClock.toString());
+                            if(Msg.NodeId != NetworkSettings.NodeID)
+                                NetworkSettings.LocalVectorClock.tick(Msg.NodeId);
                     }
                     else
                     {
                         String StringMsg = Msg.ObjtoString();
-                        System.out.println("Send to Seq : "+ StringMsg);
+                        System.out.println("Send Message to Sequencer: "+ StringMsg + " with-Local Clock-> " + NetworkSettings.LocalVectorClock.toString());
                         allsocketWriter[SequencerSrc].println(StringMsg);
                         Thread.sleep(Rdelay.nextInt(10)+1);
                     }
                     NetworkSettings.SeqMsgbuffer.removeLast();
+                    
                 }
             }
         } catch (IOException e) {

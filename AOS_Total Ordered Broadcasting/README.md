@@ -8,21 +8,24 @@ change the NetworkConfig.conf update TotalNodes & NetworkNodes as
 TotalNodes = no. of node which user gone a use
 NetworkNodes = ipaddr port,ipaddr port,ipaddr port,ipaddr port
 Sequencer = Sequencer NodeID 
+MessageCapacity = no. of message that one node have to broadcast 
 ```
 
 ## Compilation
 
 ```bash
-> javac MainApplication.java
+cd bin
+make clean
+make
 ```
 ## Run an Application
 ```bash
-> java MainApplication [nodeId]
+java MainApplication [nodeId]
 ```
 Example
 ```bash
-> java MainApplication 0
-> java MainApplication 1
-> java MainApplication 2
-> java MainApplication 3
+java MainApplication 0
+java MainApplication 1
+java MainApplication 2
+java MainApplication 3
 ```
