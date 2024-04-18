@@ -36,9 +36,9 @@ public class NetworkReceiver extends Thread {
 							System.out.println("Msg Passed " + Msg.ObjtoString() + " with-Local Clock-> " + NetworkSettings.LocalVectorClock.toString());
 						
 						}
-					/* 	if(true == NetworkSettings.NwMsgTxDone()){
+					 	if(true == NetworkSettings.NwMsgTxDone()){
 							Thread.interrupted();
-						}*/
+						}
 						
 						}
 					
