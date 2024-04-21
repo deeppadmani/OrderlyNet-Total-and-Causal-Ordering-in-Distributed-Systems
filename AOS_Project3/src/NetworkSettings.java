@@ -77,18 +77,19 @@ public class NetworkSettings
                     Message Msg = NetworkSettings.SeqMsgbuffer.getLast();
                     String StringMsg = Msg.ObjtoString();
                     Thread.sleep(Rdelay.nextInt(10)+1);
-
+                    System.out.println(StringMsg);
                     // Send the message to all other nodes
                     for (int SocketIDX = 1; SocketIDX < 3; SocketIDX++)  
                     {
                         Msg.dest = getHashCode(NodeID + (SocketIDX*2));
+                        Msg.src = NodeID;
                         StringMsg = Msg.ObjtoString();
                         allsocketWriter[Msg.dest].println(StringMsg);
 
                         // Introduce random delay before sending the next message
                         Thread.sleep(Rdelay.nextInt(10)+1);
                     }
-                    System.out.println("Add Broadcast with self update : "+ StringMsg + " with-Local Clock-> " + NetworkSettings.LocalVectorClock.toString());
+                    
                     NetworkSettings.SeqMsgbuffer.removeLast();
                 }
             }
@@ -118,7 +119,7 @@ public class NetworkSettings
                     System.out.println("Enter Destination Server Number : ");
                     DestServer = input.nextInt();
 
-                    Message ClientMsg = new Message(operation,DestServer,msg);
+                    Message ClientMsg = new Message(operation-1,DestServer,msg);
 
                     Socket socket = new Socket(NetworkSettings.allServerNetworks.get(DestServer).HostName, NetworkSettings.allServerNetworks.get(DestServer).Port);
                     PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(),true);
@@ -133,6 +134,7 @@ public class NetworkSettings
                 }
                 else{
                     System.out.println("Reading Process...!!");
+
                 }
                 System.out.println("Want to sent Another Msg: [Y/n]: ");
                 op = input.next();
