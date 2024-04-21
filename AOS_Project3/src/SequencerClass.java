@@ -2,32 +2,32 @@ import java.util.LinkedList;
 
 public class SequencerClass 
 {
-    LinkedList<Message> SeqMsgbuffer;
+    LinkedList<Message> Msgbuffer;
     int MsgSeq;
 
     public SequencerClass()
     {
-        SeqMsgbuffer  = new LinkedList<Message>();
+        Msgbuffer  = new LinkedList<Message>();
         MsgSeq = 0;
     }
     public synchronized Message getLast()
     {
-        return this.SeqMsgbuffer.getLast();
+        return this.Msgbuffer.getLast();
     }
 
     public synchronized void removeLast()
     {
-        this.SeqMsgbuffer.removeLast();
+        this.Msgbuffer.removeLast();
     }
 
     public synchronized void addFirst(Message msg)
     {
-        this.SeqMsgbuffer.addFirst(msg);
+        this.Msgbuffer.addFirst(msg);
     }
 
     public synchronized boolean isEmpty()
     {
-        return this.SeqMsgbuffer.isEmpty();
+        return this.Msgbuffer.isEmpty();
     }
 
     public synchronized void SeqIncrement()
@@ -43,7 +43,7 @@ public class SequencerClass
     public synchronized void print()
     {
         System.out.println("---------------------");
-        for(Message m:SeqMsgbuffer)
+        for(Message m:Msgbuffer)
         {
             System.out.println(m.ObjtoString());
         }

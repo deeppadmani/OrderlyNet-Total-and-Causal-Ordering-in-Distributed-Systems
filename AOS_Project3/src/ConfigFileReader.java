@@ -1,6 +1,4 @@
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 public class ConfigFileReader {
@@ -11,10 +9,8 @@ public class ConfigFileReader {
         this.Filename = Fname;
     }
 
-    List <NetworkInfo> ReadCofigFile()
+    void ReadCofigFile()
     {
-        List <NetworkInfo> allNetworks;
-        allNetworks = new ArrayList <NetworkInfo>();
         // Create a Properties object
         Properties properties = new Properties();
 
@@ -26,23 +22,29 @@ public class ConfigFileReader {
             e.printStackTrace();
         }
 
-        String TotalNode = properties.getProperty("TotalNodes");
-        String Sequencer = properties.getProperty("Sequencer");
-        String AllIps = properties.getProperty("NetworkNodes");
-        String noOfMessages = properties.getProperty("MessageCapacity");
+        String TotalserverNode = properties.getProperty("TotalServerNodes");
+        String TotalClientNodes = properties.getProperty("TotalClientNodes");
+        String AllServerIps = properties.getProperty("ServerNetworkNodes");
+        String AllSClientIps = properties.getProperty("ClientNetworkNodes");
 
-        NetworkSettings.TotalNode = Integer.parseInt(TotalNode);
-        NetworkSettings.SequencerSrc = Integer.parseInt(Sequencer);
-        NetworkSettings.MessageCapacity = Integer.parseInt(noOfMessages);
+        NetworkSettings.TotalServerNode = Integer.parseInt(TotalserverNode);
+        NetworkSettings.TotalClientNodes = Integer.parseInt(TotalClientNodes);
 
-        String []Networks =  AllIps.split(",");
+        String []ServerNetworks =  AllServerIps.split(",");
+        String []ClientNetworks =  AllSClientIps.split(",");
 
-        for(String net:Networks)
+        for(String net:ServerNetworks)
         {
             String []iponfig = net.split(" ");
-            System.out.println("IP: "+ iponfig[0] + "  PORT: "+ iponfig[1]);
-            allNetworks.add(new NetworkInfo(iponfig[0],Integer.parseInt(iponfig[1])));
+            System.out.println("SERVER IP: "+ iponfig[0] + "  PORT: "+ iponfig[1]);
+            NetworkSettings.allServerNetworks.add(new NetworkInfo(iponfig[0],Integer.parseInt(iponfig[1])));
         }
-        return allNetworks;
+        
+        for(String net:ClientNetworks)
+        {
+            String []iponfig = net.split(" ");
+            System.out.println("Client IP: "+ iponfig[0] + "  PORT: "+ iponfig[1]);
+            NetworkSettings.allClientNetworks.add(new NetworkInfo(iponfig[0],Integer.parseInt(iponfig[1])));
+        }
     }
 }

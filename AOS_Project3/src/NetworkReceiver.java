@@ -3,7 +3,8 @@ import java.io.IOException;
 import java.util.Random;
 
 // Class for receiving network messages as a thread
-public class NetworkReceiver extends Thread {
+public class NetworkReceiver extends Thread 
+{
 		
 		BufferedReader ReaderObject;		// Buffered reader for reading messages from the network
 		
@@ -16,37 +17,35 @@ public class NetworkReceiver extends Thread {
 		// Method to run the network receiver thread
 		public synchronized void run() {
 			Random Rdelay = new Random();		// Random delay generator
-			while (true) {
+			while (true)
+			{
 				try {		// Synchronize access to the buffered reader
 						
 						String MsgStr = this.ReaderObject.readLine();		// Read a message from the network
-							
-						// Create a message object from the received message string
-						Message Msg = new Message(MsgStr);
-						sleep(Rdelay.nextInt(5)+1);		// Introduce random delay before processing next
-						
-						if(Msg.MsgSeq == 0 &&  (NetworkSettings.SequencerSrc == NetworkSettings.NodeID))
+						if(null != MsgStr)	
 						{
-							NetworkSettings.SeqMsgbuffer.addFirst(Msg);
-						}
-						else{
-							if(Msg.NodeId != NetworkSettings.NodeID){
-								NetworkSettings.LocalVectorClock.tick(Msg.NodeId);
+							// Create a message object from the received message string
+							Message Msg = new Message(MsgStr);
+							sleep(Rdelay.nextInt(5)+1);		// Introduce random delay before processing next
+							if(Msg.MsgId == 0)
+							{
+								NetworkSettings.Msgbuffer.addFirst(Msg);
+								NetworkSettings.SeqMsgbuffer.SeqIncrement();
+								Msg.MsgId = NetworkSettings.SeqMsgbuffer.getSeq();
+								NetworkSettings.SeqMsgbuffer.addFirst(Msg);
 							}
-							System.out.println("Msg Passed " + Msg.ObjtoString() + " with-Local Clock-> " + NetworkSettings.LocalVectorClock.toString());
-						
+							else{
+								System.out.println(Msg.ObjtoString());
+								NetworkSettings.Msgbuffer.addFirst(Msg);
+							}	
 						}
-					 	if(true == NetworkSettings.NwMsgTxDone()){
-							Thread.interrupted();
-						}
-						
-						}
-					
-					catch (Exception e) {
-						System.out.println("Exception Raised while handling the message!");
-						e.printStackTrace();
-						break;
-					}
-			} 
+					}	
+			catch (Exception e) 
+			{
+				System.out.println("Exception Raised while handling the message!");
+				e.printStackTrace();
+				break;
+			}
 		}
+	}
 }

@@ -21,7 +21,7 @@ public class ServerThread extends Thread {
       Socket server;
       
       // Loop until all expected clients have connected
-      while(NoofClients < NetworkSettings.TotalNode-1) {
+      while(true) {
          try {
             System.out.println("Waiting for client on port " + 
             serverSocket.getLocalPort() + "...");
