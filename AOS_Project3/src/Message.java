@@ -7,6 +7,7 @@ public class Message implements Serializable {
     int RW;
     int src;      // Message count or identifier
     int dest;     // Vector clock associated with the message
+    int objNo;
     String Msg; 
 	
     // Default constructor (required for serialization)
@@ -23,11 +24,12 @@ public class Message implements Serializable {
         this.RW =  Integer.parseInt(SplitMsg[1]);
         this.src =  Integer.parseInt(SplitMsg[2]);
         this.dest =  Integer.parseInt(SplitMsg[3]);
-        this.Msg = SplitMsg[4];
+        this.objNo = Integer.parseInt(SplitMsg[4]);
+        this.Msg = SplitMsg[5];
         
     }
 
-    public Message(int op, int dest,String msg)
+    public Message(int op, int dest,int objNo,String msg)
     {
 
         // Parse the node ID and message count from the split parts
@@ -35,24 +37,17 @@ public class Message implements Serializable {
         this.RW =  op;
         this.src =  NetworkSettings.NodeID;
         this.dest =  dest;
+        this.objNo = objNo;
         this.Msg = msg;
         
     }
 
-    // // Constructor to initialize message with message count and vector clock
-    // public Message(int MsgCount,int MsgNo)
-    // {
-    //     // Set the node ID to the current node's ID
-    //     this.MsgId = NetworkSettings.NodeID;
-    //     this.MsgSeq = MsgCount;   // Set the message count
-    //     this.MsgNo = MsgNo;       // Set the vector clock
-    // }
 
     // Method to convert message object to string representation
     public String ObjtoString()
     {
         // Convert the message fields to a string with "|" as delimiter
-        String MsgStr =  "" + this.MsgId +"|"+ this.RW +"|"+ this.src +"|"+ this.dest +"|"+ this.Msg;
+        String MsgStr =  "" + this.MsgId +"|"+ this.RW +"|"+ this.src +"|"+ this.dest +"|" + this.objNo + "|" + this.Msg;
         return MsgStr;      // Return the string representation of the message
     }
 
@@ -61,5 +56,14 @@ public class Message implements Serializable {
     {
         // Print node ID, message count, and vector clock
         System.out.println("MsgId["+this.MsgId+"]  RW["+this.RW+"]   src["+this.src+"]--> dest[" + this.dest + "] "+ "Msg[" + this.Msg + "]");
+    }
+
+    public void printRXMessages()
+    {
+        String []SplitMsg = this.Msg.split("_");
+        System.out.println("Messages From Server No." + this.src + "   Object:" + this.objNo);
+        for(String m: SplitMsg){
+            System.out.println(m);
+        }
     }
 }

@@ -5,9 +5,7 @@ public class MainApplication
 		NetworkSettings Network = new NetworkSettings(Integer.parseInt(args[1]));
 		
 		try {
-			System.out.println("TEST: "+ args[0] + " PORT: " + args[1]);
 			if(args[0].equalsIgnoreCase("Server")){
-				System.out.println("TEST: "+ args[0] + " PORT: " + args[1]);
 				Network.StartNetwork();	//Start Network 
 			}
 			else if(args[0].equalsIgnoreCase("Client")){

@@ -15,7 +15,8 @@ public class NetworkReceiver extends Thread
 		}
         
 		// Method to run the network receiver thread
-		public synchronized void run() {
+		public synchronized void run() 
+		{
 			Random Rdelay = new Random();		// Random delay generator
 			while (true)
 			{
@@ -27,17 +28,28 @@ public class NetworkReceiver extends Thread
 							// Create a message object from the received message string
 							Message Msg = new Message(MsgStr);
 							sleep(Rdelay.nextInt(5)+1);		// Introduce random delay before processing next
-							if(Msg.MsgId == 0)
+							if(Msg.RW == Const.WRITE_OP)
 							{
-								NetworkSettings.Msgbuffer.addFirst(Msg);
-								NetworkSettings.SeqMsgbuffer.SeqIncrement();
-								Msg.MsgId = NetworkSettings.SeqMsgbuffer.getSeq();
-								NetworkSettings.SeqMsgbuffer.addFirst(Msg);
+								if(Msg.MsgId == Const.NULL)
+								{
+									NetworkSettings.Msgbuffer.addMsg(Msg.objNo, Msg.Msg);
+									NetworkSettings.SeqMsgbuffer.SeqIncrement();
+									Msg.MsgId = NetworkSettings.SeqMsgbuffer.getSeq();
+									NetworkSettings.SeqMsgbuffer.addFirst(Msg);
+								}
+								else
+								{
+									System.out.println(Msg.ObjtoString());
+									NetworkSettings.Msgbuffer.addMsg(Msg.objNo, Msg.Msg);
+								}	
 							}
-							else{
-								System.out.println(Msg.ObjtoString());
-								NetworkSettings.Msgbuffer.addFirst(Msg);
-							}	
+							else if(Msg.RW == Const.READ_OP)
+							{
+								String readObjMsgs = NetworkSettings.Msgbuffer.readObj(Msg.objNo);
+								Message m = new Message(Const.OP_MAX,Msg.src,Msg.objNo,readObjMsgs);
+								sleep(Rdelay.nextInt(5)+1);
+								NetworkSettings.ReplayToClient(Msg.Msg,m);
+							}
 						}
 					}	
 			catch (Exception e) 
