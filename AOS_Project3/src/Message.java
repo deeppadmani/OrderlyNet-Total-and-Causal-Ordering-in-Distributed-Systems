@@ -1,5 +1,8 @@
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 // Class representing a message that can be sent over the network
 public class Message implements Serializable {
@@ -8,6 +11,7 @@ public class Message implements Serializable {
     int src;      // Message count or identifier
     int dest;     // Vector clock associated with the message
     int objNo;
+    Boolean []ReplicaInfo;
     String Msg; 
 	
     // Default constructor (required for serialization)
@@ -25,7 +29,13 @@ public class Message implements Serializable {
         this.src =  Integer.parseInt(SplitMsg[2]);
         this.dest =  Integer.parseInt(SplitMsg[3]);
         this.objNo = Integer.parseInt(SplitMsg[4]);
-        this.Msg = SplitMsg[5];
+        this.ReplicaInfo = new Boolean[NetworkSettings.TotalServerNode];
+        String []ReplicaInfo = SplitMsg[5].split(",");
+        for(int i=0;i<NetworkSettings.TotalServerNode;i++)
+        {
+            this.ReplicaInfo[i] = "1".equals(ReplicaInfo[i]);
+        }
+        this.Msg = SplitMsg[6];
         
     }
 
@@ -38,6 +48,13 @@ public class Message implements Serializable {
         this.src =  NetworkSettings.NodeID;
         this.dest =  dest;
         this.objNo = objNo;
+        this.ReplicaInfo = new Boolean[NetworkSettings.TotalServerNode];
+        Arrays.fill(this.ReplicaInfo, false);
+        int i = 0;
+        while(i<3){
+            this.ReplicaInfo[NetworkSettings.getHashCode(dest+(i*2))] = true;
+            i++;
+        }
         this.Msg = msg;
         
     }
@@ -46,8 +63,13 @@ public class Message implements Serializable {
     // Method to convert message object to string representation
     public String ObjtoString()
     {
+        StringBuilder stringReplicaInfo = new StringBuilder();
+        for (boolean value : this.ReplicaInfo) {
+            stringReplicaInfo.append(value ? "1" : "0").append(",");
+        }
+
         // Convert the message fields to a string with "|" as delimiter
-        String MsgStr =  "" + this.MsgId +"|"+ this.RW +"|"+ this.src +"|"+ this.dest +"|" + this.objNo + "|" + this.Msg;
+        String MsgStr =  "" + this.MsgId +"|"+ this.RW +"|"+ this.src +"|"+ this.dest +"|" + this.objNo + "|" + stringReplicaInfo + "|" + this.Msg;
         return MsgStr;      // Return the string representation of the message
     }
 
@@ -65,5 +87,15 @@ public class Message implements Serializable {
         for(String m: SplitMsg){
             System.out.println(m);
         }
+    }
+
+    public List<Integer> getServerNodeFromReplicaInfo() {
+        List<Integer> trueIndices = new ArrayList<>();
+        for (int i = 0; i < this.ReplicaInfo.length; i++) {
+            if (this.ReplicaInfo[i]) {
+                trueIndices.add(i);
+            }
+        }
+        return trueIndices;
     }
 }

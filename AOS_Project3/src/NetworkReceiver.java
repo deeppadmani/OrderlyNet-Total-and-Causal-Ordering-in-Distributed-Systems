@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.List;
 import java.util.Random;
 
 // Class for receiving network messages as a thread
@@ -32,14 +33,23 @@ public class NetworkReceiver extends Thread
 							{
 								if(Msg.MsgId == Const.NULL)
 								{
-									NetworkSettings.Msgbuffer.addMsg(Msg.objNo, Msg.Msg);
-									NetworkSettings.SeqMsgbuffer.SeqIncrement();
-									Msg.MsgId = NetworkSettings.SeqMsgbuffer.getSeq();
-									NetworkSettings.SeqMsgbuffer.addFirst(Msg);
+									List<Integer> serversToSend = Msg.getServerNodeFromReplicaInfo();
+									if (2 > NetworkSettings.IsAllServerConnected(serversToSend))
+									{
+										NetworkSettings.dataStorage.writeMsginFile(Msg.objNo, MsgStr);
+										NetworkSettings.Msgbuffer.addMsg(Msg.objNo, Msg.Msg);
+										NetworkSettings.SeqMsgbuffer.SeqIncrement();
+										Msg.MsgId = NetworkSettings.SeqMsgbuffer.getSeq();
+										NetworkSettings.SeqMsgbuffer.addFirst(Msg);
+									}
+									else{
+										System.out.println("Error: 2 servers are not connected");
+									}
 								}
 								else
 								{
 									System.out.println(Msg.ObjtoString());
+									NetworkSettings.dataStorage.writeMsginFile(Msg.objNo, MsgStr);
 									NetworkSettings.Msgbuffer.addMsg(Msg.objNo, Msg.Msg);
 								}	
 							}

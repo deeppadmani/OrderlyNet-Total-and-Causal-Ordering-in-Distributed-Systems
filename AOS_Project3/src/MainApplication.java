@@ -6,6 +6,7 @@ public class MainApplication
 		
 		try {
 			if(args[0].equalsIgnoreCase("Server")){
+				Network.initProcess();
 				Network.StartNetwork();	//Start Network 
 			}
 			else if(args[0].equalsIgnoreCase("Client")){

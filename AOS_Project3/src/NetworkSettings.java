@@ -3,6 +3,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -17,15 +19,15 @@ public class NetworkSettings
     static int NodeID = 0;
     static List <NetworkInfo> allServerNetworks;
     static List <NetworkInfo> allClientNetworks;
-    static VectorClock LocalVectorClock;
     static MsgHashTable Msgbuffer;
     static SequencerClass SeqMsgbuffer;
+    static DataStorage dataStorage;
     static int TotalServerNode; //Total node of Network
     static int TotalClientNodes; //Total node of Network
     static int MessageCapacity; // Total No. of Messages
     static int SequencerSrc = -1;
 
-    Socket []allsocket;
+    static Socket []allsocket;
     PrintWriter []allsocketWriter;
 
     @SuppressWarnings("static-access")
@@ -37,14 +39,18 @@ public class NetworkSettings
         ConfigFileReader readInit = new ConfigFileReader("NetworkConfig.conf");
 		readInit.ReadCofigFile();
 
-        LocalVectorClock = new VectorClock(TotalServerNode);
+        dataStorage = new DataStorage();
         allsocket = new Socket[TotalServerNode];
         allsocketWriter = new PrintWriter[TotalServerNode];
         SeqMsgbuffer = new SequencerClass();
         Msgbuffer = new MsgHashTable();
     }
 
-    public synchronized int getHashCode(int NodeId)
+    public synchronized void initProcess()
+    {
+        dataStorage.readMsgFromFile();
+    }
+    public synchronized static int getHashCode(int NodeId)
     {
         return NodeId % TotalServerNode;
     }
@@ -52,28 +58,40 @@ public class NetworkSettings
     public synchronized void StartNetwork() throws InterruptedException 
     {
         Random Rdelay = new Random();
-        try
-        { 
+        List<Integer> serversToSend;
+
+        try {
             // Starting Server of Resoective to Node(Ex C1=0,C2=1...) which provied in Commamd line argument
             Thread ServerThread = new ServerThread(allServerNetworks.get(NodeID).Port);
             ServerThread.start();
+        }catch(Exception e){
+            System.out.println("Error in starting server thread");
+        }
 
             //Wait for server threads to start
             Thread.sleep(15000);
 
             for (int SocketIDX = 0; SocketIDX < NetworkSettings.TotalServerNode; SocketIDX++)  
             {
-                if(NetworkSettings.NodeID != SocketIDX)
-                { 
-                    // Connect to other nodes Socket For writing data
-                    allsocket[SocketIDX] = new Socket(NetworkSettings.allServerNetworks.get(SocketIDX).HostName, NetworkSettings.allServerNetworks.get(SocketIDX).Port);
-                    allsocketWriter[SocketIDX] = new PrintWriter(allsocket[SocketIDX].getOutputStream(),true);
-                    System.out.println("Socket Connected !");
-                    System.out.println("Just connected to " + allsocket[SocketIDX].getRemoteSocketAddress());
+                try{
+                    if(NetworkSettings.NodeID != SocketIDX)
+                    { 
+                        // Connect to other nodes Socket For writing data
+                        allsocket[SocketIDX] = new Socket(NetworkSettings.allServerNetworks.get(SocketIDX).HostName, NetworkSettings.allServerNetworks.get(SocketIDX).Port);
+                        allsocketWriter[SocketIDX] = new PrintWriter(allsocket[SocketIDX].getOutputStream(),true);
+                        System.out.println("Socket Connected !");
+                        System.out.println("Just connected to " + allsocket[SocketIDX].getRemoteSocketAddress() + "Status : " + allsocket[SocketIDX].isConnected());
+                        
+                    }
+                } catch (IOException e) {
+                    // Handle connection or IO exceptions
+                    System.err.println("Failed to connect to node " + SocketIDX + ": " + e.getMessage());
+                    // Optionally, you can log the exception or perform other error handling here
                 }
             }
             Thread.sleep(3000);
             // Send messages to other nodes
+            System.out.println("Network Setup Done!");
             while (true) {
               
                 
@@ -83,25 +101,59 @@ public class NetworkSettings
                     String StringMsg = Msg.ObjtoString();
                     Thread.sleep(Rdelay.nextInt(10)+1);
                     System.out.println(StringMsg);
-                    // Send the message to all other nodes
-                    for (int SocketIDX = 1; SocketIDX < 3; SocketIDX++)  
+                    serversToSend = Msg.getServerNodeFromReplicaInfo();
+                    int status = IsAllServerConnected(serversToSend);
+                    if(1 >= status)
                     {
-                        Msg.dest = getHashCode(NodeID + (SocketIDX*2));
-                        Msg.src = NodeID;
-                        StringMsg = Msg.ObjtoString();
-                        allsocketWriter[Msg.dest].println(StringMsg);
-
-                        // Introduce random delay before sending the next message
-                        Thread.sleep(Rdelay.nextInt(10)+1);
+                        if(status == 1)
+                            System.out.println("1 servers are not connected");
+                        for(int dest:serversToSend)
+                        {
+                            if(dest != NodeID && isConnected(allsocket[dest]))
+                            {
+                                allsocketWriter[dest].println(StringMsg);
+                                Thread.sleep(Rdelay.nextInt(10)+1);
+                            }
+                        }
                     }
-                    
+                    else{
+                        System.out.println("2 servers are not connected");
+                    }  
                     NetworkSettings.SeqMsgbuffer.removeLast();
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-	    }   
     }
+
+    public static Boolean isConnected(Socket s)
+    {
+        boolean var = true;
+        if(s == null)
+        {
+            var = false;
+        }
+        else if(!(s.isConnected()))
+        {
+            var = false;
+        }
+        return var;
+    }
+
+    public static int IsAllServerConnected(List<Integer> listOfServer)
+    {
+        int err=0;
+        for(int id:listOfServer)
+        {
+            if(id != NetworkSettings.NodeID)
+            {
+                if(NetworkSettings.allsocket[id] == null || !(NetworkSettings.allsocket[id].isConnected()))
+                {
+                    err++;
+                }
+            }
+        }
+        return err;
+    }
+    
     public synchronized void StartClient() throws InterruptedException
     {
         Random Rdelay = new Random();
@@ -124,22 +176,46 @@ public class NetworkSettings
                     objNo = input.nextInt();
 
                     System.out.println("Enter your Message : ");
-                    msg = input.next();
+                    msg = input.nextLine();
 
                     System.out.println("Enter Destination Server Number : ");
                     DestServer = input.nextInt();
 
                     Message ClientMsg = new Message(Const.WRITE_OP,DestServer,objNo,msg);
 
-                    Socket socket = new Socket(NetworkSettings.allServerNetworks.get(DestServer).HostName, NetworkSettings.allServerNetworks.get(DestServer).Port);
-                    PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(),true);
-                    System.out.println("Socket Connected !");
-                    System.out.println("Just connected to " + socket.getRemoteSocketAddress());
-                    Thread.sleep(3000);
+                    
+                    int attempts = 0;
+                    while(attempts < Const.MAX_CONNECTION_ATTEMPTS)
+                    {
+                        try {
+                            Socket socket = new Socket();
+                            socket.connect(new InetSocketAddress(NetworkSettings.allServerNetworks.get(DestServer).HostName, NetworkSettings.allServerNetworks.get(DestServer).Port));
+                            if(socket.isConnected())
+                            {
+                                PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(),true);
+                                System.out.println("Socket Connected !");
+                                System.out.println("Just connected to " + socket.getRemoteSocketAddress());
+                                Thread.sleep(3000);
 
-                    socketWriter.println(ClientMsg.ObjtoString());
-                    Thread.sleep(Rdelay.nextInt(10)+1);
-                    socket.close();
+                                socketWriter.println(ClientMsg.ObjtoString());
+                                Thread.sleep(Rdelay.nextInt(10)+1);
+                                socket.close();
+                                break;
+                            }
+                        } catch (IOException e) {
+                            // Handle connection or IO exceptions
+                            System.err.println("Failed to connect: " + e.getMessage());
+                        } catch (InterruptedException e) {
+                            // Handle thread interruption exceptions
+                            System.err.println("Thread interrupted: " + e.getMessage());
+                            Thread.currentThread().interrupt(); // Preserve interrupted status
+                        }
+                        DestServer = getHashCode(DestServer + 2);
+                        attempts++;
+                    }
+                    if (attempts == Const.MAX_CONNECTION_ATTEMPTS) {
+                        System.out.println("Maximum connection attempts reached. Exiting...");
+                    }
 
                 }
                 else if(Const.READ_OP == operation-1){
@@ -187,7 +263,11 @@ public class NetworkSettings
                 op = input.next();
             }while(op.equals("y")||op.equals("Y"));
             input.close();
-        } catch (IOException e) {
+        }catch (ConnectException e) {
+            // Handle connection refused exception
+            System.err.println("Connection refused: " + e.getMessage()); 
+        }
+        catch (IOException e) {
             e.printStackTrace();
 	    }   
     }
