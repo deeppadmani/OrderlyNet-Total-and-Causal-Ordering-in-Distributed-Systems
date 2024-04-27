@@ -47,6 +47,7 @@ public class SequencerClass
         {
             System.out.println(m.ObjtoString());
         }
+        System.out.println("---------------------");
         
     }
 }

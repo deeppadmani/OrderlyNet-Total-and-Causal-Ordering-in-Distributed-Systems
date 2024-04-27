@@ -135,39 +135,31 @@ public class NetworkSettings
             
             // Start the server
 
-            while (true) {
-              
-            /*     try {
-                    CheckAllSockets();
-                } catch (IOException e) {
-                    System.out.println("An error occurred while checking all sockets: " + e.getMessage());
-                }*/
+            while (true) 
+            {
                 if( NetworkSettings.SeqMsgbuffer.isEmpty() == false)
                 {
                     Message Msg = NetworkSettings.SeqMsgbuffer.getLast();
-                    String StringMsg = Msg.ObjtoString();
+                    String StringMsg;
                     Thread.sleep(Rdelay.nextInt(10)+1);
-                    System.out.println(StringMsg);
                     serversToSend = Msg.getServerNodeFromReplicaInfo();
                     int status = IsAllServerConnected(serversToSend);
                     if(1 >= status)
                     {
-                        if(status == 1)
-                            System.out.println("1 servers are not connected");
-                        for(int dest:serversToSend)
+                        if(true == NetworkSettings.ServerSocketStatus[Msg.dest])
                         {
-                            if(dest != NodeID && isConnected(allsocket[dest]))
-                            {
-                                allsocketWriter[dest].println(StringMsg);
-                                Thread.sleep(Rdelay.nextInt(10)+1);
-                            }
+                            StringMsg = Msg.ObjtoString();
+                            allsocketWriter[Msg.dest].println(StringMsg);
+                            NetworkSettings.SeqMsgbuffer.removeLast();
+                            System.out.println("TX: " + StringMsg);
+                            Thread.sleep(Rdelay.nextInt(10)+1);
                         }
                     }
                     else{
                         System.out.println("2 servers are not connected");
-                    }  
-                    NetworkSettings.SeqMsgbuffer.removeLast();
-                }
+                    } 
+                } 
+                    
             }
     }
 
@@ -195,9 +187,6 @@ public class NetworkSettings
                 if(false == NetworkSettings.ServerSocketStatus[id])
                 {
                     err++;
-                }
-                else{
-                    System.out.println("Socket Connection id " + ": " + id +" ["+ NetworkSettings.ServerSocketStatus[id] + "]");
                 }
             }
         }

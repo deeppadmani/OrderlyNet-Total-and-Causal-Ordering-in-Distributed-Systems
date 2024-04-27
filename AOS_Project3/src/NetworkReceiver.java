@@ -39,9 +39,19 @@ public class NetworkReceiver extends Thread
 									{
 										NetworkSettings.dataStorage.writeMsginFile(Msg.objNo, MsgStr);
 										NetworkSettings.Msgbuffer.addMsg(Msg.objNo, Msg.Msg);
-										NetworkSettings.SeqMsgbuffer.SeqIncrement();
-										Msg.MsgId = NetworkSettings.SeqMsgbuffer.getSeq();
-										NetworkSettings.SeqMsgbuffer.addFirst(Msg);
+										
+										for(int dest:serversToSend)
+										{
+											if(NetworkSettings.NodeID != dest){
+												Message SMsg = new Message(MsgStr);
+												SMsg.dest = dest;
+												NetworkSettings.SeqMsgbuffer.SeqIncrement();
+												SMsg.MsgId = NetworkSettings.SeqMsgbuffer.getSeq();
+												System.out.println("Add SeqBuf: "+ SMsg.ObjtoString());
+												NetworkSettings.SeqMsgbuffer.addFirst(SMsg);
+												sleep(Rdelay.nextInt(5)+1);
+											}
+										}
 									}
 									else{
 										System.out.println("Error: 2 servers are not connected");
