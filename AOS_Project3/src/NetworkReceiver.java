@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.List;
 import java.util.Random;
 
@@ -56,11 +57,28 @@ public class NetworkReceiver extends Thread
 							else if(Msg.RW == Const.READ_OP)
 							{
 								String readObjMsgs = NetworkSettings.Msgbuffer.readObj(Msg.objNo);
-								Message m = new Message(Const.OP_MAX,Msg.src,Msg.objNo,readObjMsgs);
-								sleep(Rdelay.nextInt(5)+1);
-								NetworkSettings.ReplayToClient(Msg.Msg,m);
+								if(readObjMsgs.equals(""))
+								{
+									Message m = new Message(Const.OP_MAX,Msg.src,Msg.objNo,String.valueOf(Const.ERROR_CODE));
+									NetworkSettings.ReplayToClient(Msg.Msg,m);
+								}
+								if(readObjMsgs.equals(""))
+								{
+									Message m = new Message(Const.OP_MAX,Msg.src,Msg.objNo,String.valueOf(Const.ERROR_CODE));
+									NetworkSettings.ReplayToClient(Msg.Msg,m);
+								}
+								else{
+									Message m = new Message(Const.OP_MAX,Msg.src,Msg.objNo,readObjMsgs);
+									sleep(Rdelay.nextInt(5)+1);
+									NetworkSettings.ReplayToClient(Msg.Msg,m);
+								}
 							}
 						}
+					}
+					catch (SocketException e) {
+						// Handle socket exception
+						//System.out.println("SocketException: Connection reset. The connection was closed unexpectedly.");
+						// Optionally, you can log the exception or perform any cleanup tasks
 					}	
 			catch (Exception e) 
 			{

@@ -28,10 +28,15 @@ public class MsgHashTable
     {
         String allmsg="";
         LinkedList<String> msgList=MsgTable.get(key);
-        for (String element : msgList) {
-            allmsg = allmsg + element + "_";
+        if (msgList != null) {
+            for (String element : msgList) {
+                allmsg = allmsg + element + "_";
+            }
+            System.out.println("OBJ: "+ allmsg);
+            return allmsg;
+        }else{
+            System.out.println("No messages found for Object: " + key);
+            return "";
         }
-        System.out.println("OBJ: "+ allmsg);
-        return allmsg;
     }
 }

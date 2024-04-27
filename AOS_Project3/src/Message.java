@@ -56,7 +56,6 @@ public class Message implements Serializable {
             i++;
         }
         this.Msg = msg;
-        
     }
 
 

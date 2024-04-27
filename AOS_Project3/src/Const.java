@@ -6,4 +6,6 @@ public class Const
     
     public static int NULL = 0;
     public static int MAX_CONNECTION_ATTEMPTS = 2;
+    public static int ERROR_CODE = -1;
+    public static int HEARTBEAT_INTERVAL = 5000;
 }
