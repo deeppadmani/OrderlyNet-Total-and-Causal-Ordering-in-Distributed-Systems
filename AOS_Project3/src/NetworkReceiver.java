@@ -43,7 +43,7 @@ public class NetworkReceiver extends Thread
 									{
 										NetworkSettings.dataStorage.writeMsginFile(Msg.objNo, MsgStr);
 										NetworkSettings.Msgbuffer.addMsg(Msg.objNo, Msg.Msg);
-										
+										System.out.println(Msg.ObjtoString());
 										for(int dest:serversToSend)
 										{
 											if(NetworkSettings.NodeID != dest){
@@ -91,14 +91,6 @@ public class NetworkReceiver extends Thread
 								System.out.println("WHO_I_AM_OP From[" + Msg.src+"]");
 								ConnectNodeID = Msg.src;
 							}
-							/*else if(Msg.RW == Const.HEARTBEAT_OP)
-							{
-								NetworkSettings.heartbeatReply(Msg);
-							}
-							else if(Msg.RW == Const.HEARTBEAT_RPY_OP)
-							{
-								NetworkSettings.heartbeatReply(Msg);
-							}*/
 						}
 						
 					}

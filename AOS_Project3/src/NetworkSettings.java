@@ -110,13 +110,6 @@ public class NetworkSettings
                     Message Msg = NetworkSettings.SeqMsgbuffer.getLast();
                     String StringMsg;
                     Thread.sleep(Rdelay.nextInt(10)+1);
-                   /*  if(Msg.RW == Const.HEARTBEAT_RPY_OP)
-                    {
-                        StringMsg = Msg.ObjtoString();
-                        allsocketWriter[Msg.dest].println(StringMsg);
-                        NetworkSettings.SeqMsgbuffer.removeLast();
-                    }
-                    else*/
                     {
                         serversToSend = Msg.getServerNodeFromReplicaInfo();
                         int status = IsAllServerConnected(serversToSend);
@@ -129,6 +122,9 @@ public class NetworkSettings
                                 NetworkSettings.SeqMsgbuffer.removeLast();
                                 System.out.println("TX: " + StringMsg);
                                 Thread.sleep(Rdelay.nextInt(10)+1);
+                            }else{
+                                NetworkSettings.SeqMsgbuffer.removeLast();
+                                NetworkSettings.SeqMsgbuffer.addFirst(Msg);
                             }
                         }
                         else{
