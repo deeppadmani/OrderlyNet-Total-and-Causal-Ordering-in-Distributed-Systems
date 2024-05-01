@@ -23,11 +23,11 @@ public class ServerThread extends Thread {
       // Loop until all expected clients have connected
       while(true) {
          try {
-          //  System.out.println("Waiting for client on port " + serverSocket.getLocalPort() + "...");
+            System.out.println("Waiting for client on port " + serverSocket.getLocalPort() + "...");
             server = serverSocket.accept();
 
             InetSocketAddress remoteSocketAddress = (InetSocketAddress) server.getRemoteSocketAddress();
-            //System.out.println("Just connected to " + remoteSocketAddress.getAddress());
+            System.out.println("Just connected to " + remoteSocketAddress.getAddress() + "   NoofClients : "+ NoofClients);
             
             NoofClients++;
             

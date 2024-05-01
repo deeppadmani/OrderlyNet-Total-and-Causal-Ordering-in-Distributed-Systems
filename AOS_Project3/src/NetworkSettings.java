@@ -57,40 +57,6 @@ public class NetworkSettings
         return NodeId % TotalServerNode;
     }
 
-    public synchronized void CheckAllSockets() throws IOException
-    {
-        for(int id = 0;id < TotalServerNode ; id++) 
-        {
-            if(false == ServerSocketStatus[id])
-            {
-                    try{
-                        allsocket[id] = new Socket(NetworkSettings.allServerNetworks.get(id).HostName, NetworkSettings.allServerNetworks.get(id).Port);
-                        allsocketWriter[id] = new PrintWriter(allsocket[id].getOutputStream(),true);
-                        System.out.println("Socket Connected !");
-                        System.out.println("Just connected to " + allsocket[id].getRemoteSocketAddress() + "  Status : " + allsocket[id].isConnected());
-                        ServerSocketStatus[id] = true;
-                } catch (IOException e) {
-                    // Handle connection or IO exceptions
-                    //System.err.println("Failed to connect to node " + id + ": " + e.getMessage());
-                    // Optionally, you can log the exception or perform other error handling here
-                }
-            }
-            else{
-                try {
-                    // Attempt to create a socket connection to the specified host and port
-                    Socket socket = new Socket(NetworkSettings.allServerNetworks.get(id).HostName, NetworkSettings.allServerNetworks.get(id).Port);
-                    
-                    ServerSocketStatus[id] = true;
-                    socket.close(); // Close the socket
-                } catch (Exception e) {
-                    allsocket[id].close();
-                    allsocketWriter[id].close();
-                    ServerSocketStatus[id] = false;
-                }
-            }
-        }
-    }
-
     // Method to start the network communication
     public synchronized void StartNetwork() throws InterruptedException 
     {
@@ -119,7 +85,9 @@ public class NetworkSettings
                         ServerSocketStatus[SocketIDX] = true;
                         System.out.println("Socket Connected !");
                         System.out.println("Just connected to " + allsocket[SocketIDX].getRemoteSocketAddress() + "  Status : " + allsocket[SocketIDX].isConnected());
-                        
+                        Message m = new Message(Const.WHO_I_AM_OP, SocketIDX, NodeID,Integer.toString(NodeID));
+                        allsocketWriter[SocketIDX].println(m.ObjtoString());
+
                     }
                 } catch (IOException e) {
                     // Handle connection or IO exceptions
@@ -128,13 +96,13 @@ public class NetworkSettings
                 }
             }
             Thread.sleep(3000);
-            // Send messages to other nodes
+            
             System.out.println("Network Setup Done!");
+            //Start Network Validator
             NetworkValidator validator = new NetworkValidator(Const.HEARTBEAT_INTERVAL);
             validator.start();
             
             // Start the server
-
             while (true) 
             {
                 if( NetworkSettings.SeqMsgbuffer.isEmpty() == false)
@@ -142,22 +110,31 @@ public class NetworkSettings
                     Message Msg = NetworkSettings.SeqMsgbuffer.getLast();
                     String StringMsg;
                     Thread.sleep(Rdelay.nextInt(10)+1);
-                    serversToSend = Msg.getServerNodeFromReplicaInfo();
-                    int status = IsAllServerConnected(serversToSend);
-                    if(1 >= status)
+                   /*  if(Msg.RW == Const.HEARTBEAT_RPY_OP)
                     {
-                        if(true == NetworkSettings.ServerSocketStatus[Msg.dest])
-                        {
-                            StringMsg = Msg.ObjtoString();
-                            allsocketWriter[Msg.dest].println(StringMsg);
-                            NetworkSettings.SeqMsgbuffer.removeLast();
-                            System.out.println("TX: " + StringMsg);
-                            Thread.sleep(Rdelay.nextInt(10)+1);
-                        }
+                        StringMsg = Msg.ObjtoString();
+                        allsocketWriter[Msg.dest].println(StringMsg);
+                        NetworkSettings.SeqMsgbuffer.removeLast();
                     }
-                    else{
-                        System.out.println("2 servers are not connected");
-                    } 
+                    else*/
+                    {
+                        serversToSend = Msg.getServerNodeFromReplicaInfo();
+                        int status = IsAllServerConnected(serversToSend);
+                        if(1 >= status)
+                        {
+                            if(true == NetworkSettings.ServerSocketStatus[Msg.dest])
+                            {
+                                StringMsg = Msg.ObjtoString();
+                                allsocketWriter[Msg.dest].println(StringMsg);
+                                NetworkSettings.SeqMsgbuffer.removeLast();
+                                System.out.println("TX: " + StringMsg);
+                                Thread.sleep(Rdelay.nextInt(10)+1);
+                            }
+                        }
+                        else{
+                           System.out.println("2 servers are not connected");
+                        } 
+                    }
                 } 
                     
             }
@@ -328,5 +305,13 @@ public class NetworkSettings
         socketWriter.println(m.ObjtoString());
         Thread.sleep(Rdelay.nextInt(10)+1);
         socket.close();
+    }
+
+    public synchronized static void heartbeatReply(Message m) throws InterruptedException, IOException
+    {
+        Message reply = new Message(Const.HEARTBEAT_RPY_OP,m.src,-1,Const.SOCKET_ALIVE_STR);
+        
+        NetworkSettings.SeqMsgbuffer.addFirst(reply);
+       // allsocketWriter[reply.dest].println(reply.ObjtoString());
     }
 }

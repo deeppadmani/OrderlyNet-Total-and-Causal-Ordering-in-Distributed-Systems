@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class NetworkValidator extends Thread
 {
@@ -23,7 +24,7 @@ public class NetworkValidator extends Thread
                             NetworkSettings.allsocket[id] = new Socket(NetworkSettings.allServerNetworks.get(id).HostName, NetworkSettings.allServerNetworks.get(id).Port);
                             NetworkSettings.allsocketWriter[id] = new PrintWriter(NetworkSettings.allsocket[id].getOutputStream(),true);
                             System.out.println("Socket Connected !");
-                            System.out.println("Just connected to " + NetworkSettings.allsocket[id].getRemoteSocketAddress() + "  Status : " + NetworkSettings.allsocket[id].isConnected());
+                            System.out.println("Just connected to " + NetworkSettings.allsocket[id].getRemoteSocketAddress() + "  Status : " + NetworkSettings.allsocket[id].isConnected() + "   ID : "+ id);
                             NetworkSettings.ServerSocketStatus[id] = true;
                     } catch (IOException e) {
                         // Handle connection or IO exceptions
@@ -32,28 +33,22 @@ public class NetworkValidator extends Thread
                     }
                 }
                 else{
-                    try {
-                        // Attempt to create a socket connection to the specified host and port
-                        Socket socket = new Socket(NetworkSettings.allServerNetworks.get(id).HostName, NetworkSettings.allServerNetworks.get(id).Port);
-                        
-                        NetworkSettings.ServerSocketStatus[id] = true;
-                        socket.close(); // Close the socket
-                    } catch (Exception e) {
-                        try {
-                            NetworkSettings.allsocket[id].close();
-                        } catch (IOException e1) {
-                            System.out.println("An error occurred while closing the socket: " + e1.getMessage());
+                        try{
+                            Message m = new Message(Const.HEARTBEAT_OP,id,-1,Const.HEARTBEAT_STR);
+                            NetworkSettings.allsocketWriter[id].println(m.ObjtoString());
+                            NetworkSettings.allsocket[id].setSoTimeout(Const.CONNECTION_TIMEOUT);
+                            
+                        }catch (SocketException e) {
+                            NetworkSettings.ServerSocketStatus[id]= false;
+                            System.out.println("Socket["+id+"] Closed!");
                         }
-                        NetworkSettings.allsocketWriter[id].close();
-                        NetworkSettings.ServerSocketStatus[id] = false;
                     }
                 }
-            }
-            try {
-                Thread.sleep(heartbeatInterval);
-            } catch (InterruptedException e) {
-                System.out.println("Sleep operation was interrupted: " + e.getMessage());
-            }
+                try {
+                    Thread.sleep(heartbeatInterval);
+                } catch (InterruptedException e) {
+                    System.out.println("Sleep operation was interrupted: " + e.getMessage());
+                }
         }
 	}
 }

@@ -9,21 +9,25 @@ public class NetworkReceiver extends Thread
 {
 		
 		BufferedReader ReaderObject;		// Buffered reader for reading messages from the network
+		int ConnectNodeID;
+		boolean runningStatus;
 		
 		// Constructor to initialize the network receiver with a buffered reader
 		public NetworkReceiver(BufferedReader ReaderObject) throws IOException
 		{
 			this.ReaderObject = ReaderObject;		// Initialize the buffered reader
+			this.ConnectNodeID = Const.ERROR_CODE;
+			this.runningStatus = true;
 		}
         
 		// Method to run the network receiver thread
 		public synchronized void run() 
 		{
 			Random Rdelay = new Random();		// Random delay generator
-			while (true)
+			
+			while (runningStatus)
 			{
-				try {		// Synchronize access to the buffered reader
-						
+				try {	
 						String MsgStr = this.ReaderObject.readLine();		// Read a message from the network
 						if(null != MsgStr)	
 						{
@@ -47,7 +51,6 @@ public class NetworkReceiver extends Thread
 												SMsg.dest = dest;
 												NetworkSettings.SeqMsgbuffer.SeqIncrement();
 												SMsg.MsgId = NetworkSettings.SeqMsgbuffer.getSeq();
-												System.out.println("Add SeqBuf: "+ SMsg.ObjtoString());
 												NetworkSettings.SeqMsgbuffer.addFirst(SMsg);
 												sleep(Rdelay.nextInt(5)+1);
 											}
@@ -83,12 +86,26 @@ public class NetworkReceiver extends Thread
 									NetworkSettings.ReplayToClient(Msg.Msg,m);
 								}
 							}
+							else if(Msg.RW == Const.WHO_I_AM_OP)
+							{
+								System.out.println("WHO_I_AM_OP From[" + Msg.src+"]");
+								ConnectNodeID = Msg.src;
+							}
+							/*else if(Msg.RW == Const.HEARTBEAT_OP)
+							{
+								NetworkSettings.heartbeatReply(Msg);
+							}
+							else if(Msg.RW == Const.HEARTBEAT_RPY_OP)
+							{
+								NetworkSettings.heartbeatReply(Msg);
+							}*/
 						}
+						
 					}
 					catch (SocketException e) {
-						// Handle socket exception
-						//System.out.println("SocketException: Connection reset. The connection was closed unexpectedly.");
-						// Optionally, you can log the exception or perform any cleanup tasks
+						NetworkSettings.ServerSocketStatus[ConnectNodeID]= false;
+						System.out.println("Socket["+ConnectNodeID+"] Closed! Thread Exit!");
+						runningStatus = false;
 					}	
 			catch (Exception e) 
 			{
